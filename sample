@@ -1,0 +1,178 @@
+<?php
+session_start();
+
+// Check if the user is logged in
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    // If not logged in, redirect to the login page or any other authentication page
+    header("Location: login.php");
+    exit();
+}
+
+// Assuming the bill ID is passed through the URL as 'bill_id'
+if (!empty($_GET['bill_id'])) {
+    $bill_id = $_GET['bill_id'];
+
+    // Fetch bill details from the database based on $bill_id
+    include 'db_connection.php';
+
+    // Assuming you have a table named 'bills' with columns 'bill_id', 'user_id', 'shipping_user_id', 'transport', 'bill_date'
+    $sql = "SELECT * FROM bill WHERE id = $bill_id";
+    $result = $conn->query($sql);
+
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $user_id = $row['user_id'];
+        $shipping_user_id = $row['ship_user_id'];
+        $transport = $row['transport'];
+        $bill_date = $row['date'];
+        $bill_numer = $row['number'];
+    } else {
+        echo "No bill found with the given ID";
+        exit();
+    }
+
+    $conn->close();
+} else {
+    echo "No bill ID provided";
+    exit();
+}
+?>
+
+<!-- Rest of your HTML and script remains unchanged -->
+<!-- Use the fetched data to pre-fill the form fields -->
+<!-- Example: Set selected options in the dropdowns and set input values -->
+
+<td>
+    <select name="user" id="user" style="padding: 8px; border-radius: 5px;">
+        <?php
+        foreach ($usernames as $username) {
+            $selected = ($username == $user_id) ? "selected" : "";
+            echo "<option value='" . htmlspecialchars($username) . "' $selected>" . htmlspecialchars($username) . "</option>";
+        }
+        ?>
+    </select>
+</td>
+<td>
+    <select name="user-ship" id="user-ship" style="padding: 8px; border-radius: 5px;">
+        <?php
+        foreach ($usernames as $username) {
+            $selected = ($username == $shipping_user_id) ? "selected" : "";
+            echo "<option value='" . htmlspecialchars($username) . "' $selected>" . htmlspecialchars($username) . "</option>";
+        }
+        ?>
+    </select>
+</td>
+<td>
+    <input type="text" name="bill-transport" id="bill-transport" value="<?php echo htmlspecialchars($transport); ?>" style="padding: 8px;width:100px;">
+</td>
+<td>
+    <input type="date" name="bill-date" id="bill-date" value="<?php echo htmlspecialchars($bill_date); ?>" style="padding: 5px;">
+</td>
+<!-- Continue with populating other fields as necessary -->
+
+<!-- Ensure the form action points to the script that will handle bill updates -->
+<form method="post" action="bill_update.php?bill_id=<?php echo $bill_id; ?>">
+    <!-- Rest of your form -->
+</form>
+
+
+
+<form method="post" action="bill_submit.php">
+
+<table style="width: 80%;">
+            <colgroup>
+                <col style="width: 30%;"> <!-- S.NO. -->
+                <col style="width: 20%;"> <!-- CONSTRUCTIONS -->
+                <col style="width: 20%;"> <!-- MTR/QTY -->
+                <col style="width: 10%;"> <!-- MTR/QTY -->
+
+            
+            </colgroup>
+        <tr>
+            <th>Billing party</th>
+            <th>Shipping party</th>
+            <th>Tranport</th>
+            <th>Date</th>
+           
+        </tr>
+
+        <tr>
+        <td>
+    <select name="user" id="user" style="padding: 8px; border-radius: 5px;">
+        <?php
+        foreach ($usernames as $username) {
+            $selected = ($username == $BillerName ) ? "selected" : "";
+            echo "<option value='" . htmlspecialchars($username) . "' $selected>" . htmlspecialchars($username) . "</option>";
+        }
+        ?>
+    </select>
+</td>
+<td>
+    <select name="user-ship" id="user-ship" style="padding: 8px; border-radius: 5px;">
+        <?php
+        foreach ($usernames as $username) {
+            $selected = ($username == $ShipperName) ? "selected" : "";
+            echo "<option value='" . htmlspecialchars($username) . "' $selected>" . htmlspecialchars($username) . "</option>";
+        }
+        ?>
+    </select>
+</td>
+            <td>
+                 <?php
+                   $todayDate = date("Y-m-d");
+                   $transport = "TN37BW6097";
+                ?>
+                <input type="text" name="bill-transport" id="bill-transport" value="<?php echo $transport; ?>" style="padding: 8px;width:100px;">
+            </td>
+            <td>
+                <input type="date" name="bill-date" id="bill-date" value="<?php echo $todayDate; ?>" style="padding: 5px; ">     
+           </td>
+        </tr>
+    </table>
+
+    
+    
+
+   
+    <br><br>
+    
+
+    <table id="products-table" style="width: 80%;">
+            <colgroup>
+                <col style="width: 30%;"> <!-- S.NO. -->
+                <col style="width: 20%;"> <!-- CONSTRUCTIONS -->
+                <col style="width: 20%;"> <!-- MTR/QTY -->
+                <col style="width: 10%;"> <!-- MTR/QTY -->
+
+            
+            </colgroup>
+        <tr>
+            <th>Product Name</th>
+            <th>Quantity</th>
+            <th>Price per Unit</th>
+            <th>
+               
+                <button type="button" style="padding:5px;" onclick="addProductRow()">
+                <i class="fas fa-plus"></i> 
+
+            </button>
+
+            </th>
+        </tr>
+
+        <tr>
+            <td>
+                <select name="product_name[]" style="padding: 8px; border-radius: 5px;width:200px;" required>
+                    <?php foreach ($productNames as $name) { echo "<option value='" . htmlspecialchars($name) . "'>" . htmlspecialchars($name) . "</option>"; } ?>
+                </select>
+            </td>
+            <td><input type="number" name="quantity[]" style="padding: 4px;width:80px;" required></td>
+            <td><input type="number" step="0.01" name="price[]" style="padding: 4px; width:80px;" required></td>
+            <td>
+                <button type="button" onclick="deleteProductRow(this)"  style="padding: 5px;"  ><i class="fas fa-trash-alt"></i></button>
+            </td>
+        </tr>
+    </table>
+    <br>
+    <input type="submit" value="Generate Bill" class="btn-secondary" style="margin-left:80%">
+    </form>
